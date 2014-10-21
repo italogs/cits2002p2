@@ -15,8 +15,8 @@ int create(int argc, char *argv[])
 //  CHECK THE COMMAND-LINE ARGUMENTS PROVIDED FOR 'create'
     int  opt;
     opterr      = 0;
-    while((opt = getopt(argc, argv, CREATE_OPTLIST)) != -1)   
-    {  
+    while((opt = getopt(argc, argv, CREATE_OPTLIST)) != -1)
+    {
         switch (opt) {
 //  BLOCKSIZE - AN INTEGER ARGUMENT
         case 'b' :
@@ -50,6 +50,7 @@ int create(int argc, char *argv[])
                 progname);
         exit(EXIT_FAILURE);
     }
+    header.currentblock = 0;
 
 //  INITIALISE THE 'bitmap' BLOCK FOR THE VOLUME
     UNIQFS_BIT  bitmap[header.nblocks];

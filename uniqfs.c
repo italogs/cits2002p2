@@ -2,8 +2,8 @@
 
 /*
    CITS2002 Project 2 2014
-   Name(s):             student-name1 (, student-name2)
-   Student number(s):   student-number-1 (, student-number-2)
+   Name(s):             Italo Gomes Santana (, student-name2)
+   Student number(s):   21382104 (, student-number-2)
    Date:                date-of-submission
 */
 
@@ -35,19 +35,31 @@ int main(int argc, char *argv[])
     }
     else if(argc > 1 && strcmp(argv[1], "verify") == 0)
     {
-        ; // IN THE SAMPLE SOLUTION, BUT NOT REQUIRED FOR YOUR PROJECT
+         // IN THE SAMPLE SOLUTION, BUT NOT REQUIRED FOR YOUR PROJECT
     }
     else if(argc > 1 && strcmp(argv[1], "view") == 0)
     {
-        ; // IN THE SAMPLE SOLUTION, BUT NOT REQUIRED FOR YOUR PROJECT
+        // IN THE SAMPLE SOLUTION, BUT NOT REQUIRED FOR YOUR PROJECT
     }
     else if(argc > 1 && strcmp(argv[1],"put") == 0)
     {
-        result   = put();
+        result = put(argc, &argv[2]);
+    }
+    else if(argc > 1 && strcmp(argv[1],"get") == 0)
+    {
+        // result = get(argc-1, &argv[1]);
+    }
+    else if(argc > 1 && strcmp(argv[1],"list") == 0)
+    {
+      // result = list();
+    }
+    else if(argc > 1 && strcmp(argv[1],"delete") == 0)
+    {
+      // result = delete(argc-1, &argv[1]);
     }
     else if(argc > 1 && strcmp(argv[1],"stats") == 0)
     {
-
+      // result = stats();
     }
     else
     {

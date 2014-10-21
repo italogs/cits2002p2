@@ -5,7 +5,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/errno.h>
-
+#include <time.h>
 #include <openssl/md5.h>
 
 //  uniqfs.h, written by Chris.McDonald@uwa.edu.au, October 2014
@@ -22,6 +22,7 @@ extern  char                    *strdup(const char *s);
 typedef struct {
      uint32_t                   nblocks;
      uint32_t                   blocksize;
+     uint32_t                   currentblock;
 } UNIQFS_VOLUME_HEADER;
 
 #define UNIQFS_UNUSED           0
@@ -47,6 +48,26 @@ typedef struct {
 
 //  DEFINED IN create.c
 extern  int                     create(int argc, char *argv[]);
+extern  UNIQFS_VOLUME_HEADER    getHeader();
+extern  UNIQFS_BIT              *getBitmap();
+
+
+//  DEFINED IN put.c
+extern  int                     put(int argc, char *argv[]);
+
+//  DEFINED IN get.c
+// extern  int                     get(int argc, char *argv[]);
+
+//  DEFINED IN list.c
+// extern  int                     list();
+
+//  DEFINED IN delete.c
+// extern  int                     delete(int argc, char *argv[]);
+
+//  DEFINED IN stats.c
+// extern  int                     stats();
+
+
 
 //  DEFINED IN globals.c
 extern  char                    *progname;
