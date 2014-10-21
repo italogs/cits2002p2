@@ -41,6 +41,14 @@ int main(int argc, char *argv[])
     {
         ; // IN THE SAMPLE SOLUTION, BUT NOT REQUIRED FOR YOUR PROJECT
     }
+    else if(argc > 1 && strcmp(argv[1],"put") == 0)
+    {
+        result   = put();
+    }
+    else if(argc > 1 && strcmp(argv[1],"stats") == 0)
+    {
+
+    }
     else
     {
         fprintf(stderr, "Usage: %s action [options]\n", progname);
