@@ -50,16 +50,20 @@ typedef struct {
 extern  int                     create(int argc, char *argv[]);
 extern  UNIQFS_VOLUME_HEADER    getHeader();
 extern  UNIQFS_BIT              *getBitmap();
+extern  unsigned long           getFileSize(char *filename);
+extern  void                    printHeaderBitmap();
+
+extern  bool                    isMD5equal(unsigned char *md51, unsigned char *md52);
 
 
 //  DEFINED IN put.c
 extern  int                     put(int argc, char *argv[]);
 
 //  DEFINED IN get.c
-// extern  int                     get(int argc, char *argv[]);
+extern  int                     get(int argc, char *argv[]);
 
 //  DEFINED IN list.c
-// extern  int                     list();
+extern  int                     list();
 
 //  DEFINED IN delete.c
 // extern  int                     delete(int argc, char *argv[]);

@@ -47,11 +47,11 @@ int main(int argc, char *argv[])
     }
     else if(argc > 1 && strcmp(argv[1],"get") == 0)
     {
-        // result = get(argc-1, &argv[1]);
+        //result = get(argc, &argv[2]);
     }
     else if(argc > 1 && strcmp(argv[1],"list") == 0)
     {
-      // result = list();
+        result = list();
     }
     else if(argc > 1 && strcmp(argv[1],"delete") == 0)
     {
