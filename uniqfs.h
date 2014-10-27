@@ -48,11 +48,10 @@ typedef struct {
 
 //  DEFINED IN create.c
 extern  int                     create(int argc, char *argv[]);
-extern  UNIQFS_VOLUME_HEADER    getHeader();
-extern  UNIQFS_BIT              *getBitmap();
+extern  void                    setHeaderBitmap();
 extern  unsigned long           getFileSize(char *filename);
 extern  void                    printHeaderBitmap();
-
+extern  void                    dump_volume(void);
 extern  bool                    isMD5equal(unsigned char *md51, unsigned char *md52);
 
 
@@ -76,7 +75,15 @@ extern  int                     list();
 //  DEFINED IN globals.c
 extern  char                    *progname;
 extern  char                    *volumename;
+extern  UNIQFS_VOLUME_HEADER    header;
+extern  UNIQFS_BIT              *bitmap;
+
+
+
 extern  FILE                    *open_volumename(char *mode);
+
+
+
 
 //  DEFINED IN md5digest.c
 extern	unsigned char	*MD5digest(char *filename);

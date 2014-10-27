@@ -8,31 +8,29 @@ int put(int argc, char *argv[])
 
   printf("put();\n");
 
-  if(strlen(*argv) >= UNIQFS_MAXNAME_LENGTH ) {
-    fprintf(stderr,"%s: File name too long\n",*argv);exit(EXIT_FAILURE);
-  }
+  if(strlen(*argv) >= UNIQFS_MAXNAME_LENGTH ) {fprintf(stderr,"%s: File name too long\n",*argv);exit(EXIT_FAILURE);}
 
-  FILE *volume = open_volumename("r+");
-  if(volume == NULL) {fprintf(stderr,"Volume not defined. You should define one to use this function.\n");exit(EXIT_FAILURE);}
-
-  UNIQFS_VOLUME_HEADER header = getHeader();
-  UNIQFS_BIT *bitmap = getBitmap();
 
   // iterate among the files
   while(*argv != NULL) {
+    FILE *volume = open_volumename("r+");
+    FILE *upperPart = volume;
+    setHeaderBitmap();
     printf("-> filename: %s\n",*argv);
 
     unsigned long fileSize = getFileSize(*argv);
     printf("-> filesize %lu\n",fileSize);
     FILE *inputFile = fopen(*argv,"r");
 
-    // //couldn't open the file
+    //couldn't open the file
     if(inputFile == NULL) {fprintf(stderr,"Usage: %s put filename1 [filename2 ....] \n",progname);exit(EXIT_FAILURE);}
 
-    int filenBlocks = fileSize / header.blocksize;
+    int filenBlocks = fileSize / header.blocksize + 1;
+
+    printf("filenblocks: %d\n",filenBlocks);
 
     //verify if there is enough space including for the info block
-    if (header.currentblock + filenBlocks + 1 >= header.nblocks) {fprintf(stderr,"%s: No space left on device\n",*argv);exit(EXIT_FAILURE);}
+    if (header.currentblock + filenBlocks > header.nblocks) {fprintf(stderr,"%s: No space left on device\n",*argv);exit(EXIT_FAILURE);}
 
 
     UNIQFS_FILE_ENTRY fileEntryInput;
@@ -40,65 +38,73 @@ int put(int argc, char *argv[])
     fileEntryInput.creation_time = curtime;
     time_t a = fileEntryInput.creation_time;
     printf("-> creation time: %s\n",ctime(&a));
-    strcpy(fileEntryInput.filename,"abc123");
+    strcpy(fileEntryInput.filename,*argv);
+
 
     UNIQFS_FILE_INFO fileInfoInput;
     fileInfoInput.nfiles = 1;
     fileInfoInput.length = fileSize;
     fileInfoInput.firstblock = header.currentblock;
-    // char md5string[MD5_DIGEST_LENGTH] = "";
     unsigned char *md5 = MD5digest(*argv);
-    // sprintMD5(md5string, md5);
-    // int len = strlen(md5string);
     int i=0;
     for(i=0;i<MD5_DIGEST_LENGTH;i++) {
       fileInfoInput.md5[i] = md5[i];
     }
-    fileInfoInput.md5[i] = '\0';
-    // printf("-> generated md5: %02x\n",fileInfoInput.md5);
+    fileInfoInput.md5[i] = EOF;
 
 
-    bitmap[header.currentblock] = UNIQFS_INFO;
-    header.currentblock++;
-    for(int i = 0 ; i < filenBlocks;i++) {
-        bitmap[header.currentblock + i] = UNIQFS_DATA;
-    }
-    header.currentblock += filenBlocks;
-    fwrite(&header, sizeof(header), 1, volume);
-    fwrite(bitmap, header.nblocks * sizeof(UNIQFS_BIT), 1, volume);
+
 
 
 
     char emptyblock[header.blocksize];
     UNIQFS_FILE_INFO fileInfo;
     UNIQFS_FILE_ENTRY file;
+    // FILE *ref = NULL;
     for(unsigned long i = 0 ; i < header.currentblock; i++) {
+
         //data block
         if ( bitmap[i] == UNIQFS_UNUSED || bitmap[i] == UNIQFS_DATA) {
-          fread(&emptyblock, header.blocksize,1,volume);
-
+          //fread(&emptyblock, header.blocksize,1,volume);
+          printf("if\n");
         } else if (bitmap[i] == UNIQFS_INFO) {
+          printf("else\n");
+          fread(&fileInfo, sizeof(fileInfo),1,volume);
 
-          fread(&fileInfo, sizeof(UNIQFS_FILE_INFO),1,volume);
+          printf("entrada md5: ");
+          for(int i = 0 ; i < MD5_DIGEST_LENGTH ; i ++ ) {
+              printf("%02x",fileInfoInput.md5[i]);
+          }
+          printf("\n");
+          printf("existente md5: ");
+          for(int i = 0 ; i < MD5_DIGEST_LENGTH ; i ++ ) {
+              printf("%02x",fileInfo.md5[i]);
+          }
+          printf("\n");
+
           if(isMD5equal(fileInfoInput.md5,fileInfo.md5)) {
             printf("Files already exists #TODO\n\n");
             exit(EXIT_FAILURE);
           }
 
           for ( int j = 0 ; j < fileInfo.nfiles ; j++ ) {
-            fread(&file, sizeof(UNIQFS_FILE_ENTRY),1,volume);
+            fread(&file, sizeof(file),1,volume);
           }
         }
     }
 
-    fwrite(&fileInfoInput, sizeof(UNIQFS_FILE_INFO), 1, volume);
-
-    printf("(%d files) md5: ",fileInfoInput.nfiles);
-    for(int i = 0 ; i < MD5_DIGEST_LENGTH ; i ++ ) {
-        printf("%02x",fileInfoInput.md5[i]);
+    bitmap[header.currentblock++] = UNIQFS_INFO;
+    for(int i = header.currentblock;i<header.currentblock + filenBlocks ; i++ ){
+      bitmap[i] = UNIQFS_DATA;
     }
-    printf("\nfilename: %s\n",fileEntryInput.filename);
-    fwrite(&fileEntryInput, sizeof(UNIQFS_FILE_ENTRY), 1, volume);
+    header.currentblock += filenBlocks;
+    fwrite(&header, sizeof(header), 1, upperPart);
+    fwrite(bitmap, header.nblocks * sizeof(UNIQFS_BIT), 1, upperPart);
+
+    
+
+    fwrite(&fileInfoInput, sizeof(fileInfoInput), 1, volume);
+    fwrite(&fileEntryInput, sizeof(fileEntryInput), 1, volume);
     int b = 0;
     char c = 0;
     while( (c = fgetc(inputFile)) != EOF ){
@@ -109,7 +115,7 @@ int put(int argc, char *argv[])
         b = 0;
       }
     }
-    printf("aqui %d %c\n",header.blocksize,emptyblock[0]);
+
     while (b < header.blocksize) {
       emptyblock[b] = '\0';
       b++;
@@ -117,9 +123,11 @@ int put(int argc, char *argv[])
 
     fwrite(&emptyblock, header.blocksize, 1, volume);
     fclose(inputFile);
+    fclose(volume);
     argv++;
 
+
   }
-  fclose(volume);
+
   return 0;
 }

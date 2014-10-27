@@ -12,7 +12,5 @@ int get(int argc, char *argv[])
     fprintf(stderr,"%s: File name too long\n",*argv);exit(EXIT_FAILURE);
   }
 
-  
-  printHeaderBitmap();
   return 0;
 }
