@@ -19,7 +19,7 @@ int put(int argc, char *argv[])
     printf("-> filename: %s\n",*argv);
 
     unsigned long fileSize = getFileSize(*argv);
-    printf("-> filesize %lu\n",fileSize);
+    printf("-> fileSize %lu\n",fileSize);
     FILE *inputFile = fopen(*argv,"r");
 
     //couldn't open the file
@@ -69,34 +69,55 @@ int put(int argc, char *argv[])
 
           if(isMD5equal(md5FromARGV,fileInfo.md5)) {
 
-            printf("MD5 equal #TO DO\n");
-            exit(EXIT_FAILURE);
 
-          //   fileInfo.nfiles = 2;
-          //   printf("ftell(navigator) %lu\n",ftell(navigator));
-          //   fseek(navigator,-sizeof(UNIQFS_FILE_INFO),SEEK_CUR);
-          //   fwrite(&fileInfo, sizeof(UNIQFS_FILE_INFO),1,navigator);
-          //
-          //   UNIQFS_FILE_INFO fileInfo2;
-          // //  fread(&fileInfo2, sizeof(UNIQFS_FILE_INFO),1,navigator);
-          //
-          //
-          //   printf("fileInfo.nfiles %d\n",fileInfo2.nfiles);
-          //   printf("ftell(navigator) %lu\n",ftell(navigator));
-          //   printf("Files already exists\n");
-          //
-          //   fileAlreadyExists = true;
-          //
-          //   UNIQFS_FILE_ENTRY fileEntryInput;
-          //   time_t curtime;time(&curtime);
-          //   fileEntryInput.creation_time = curtime;
-          //   strcpy(fileEntryInput.filename,"vai se fuder");
-          //   printf("%s\n",fileEntryInput.filename);
-            // for ( int j = 0 ; j < fileInfo.nfiles - 1 ; j++ ) {
-            //   fread(&file, sizeof(file),1,navigator);
-            //   // fseek(navigator, sizeof(file),SEEK_CUR);
-            // }
-            // fwrite(&fileEntryInput, sizeof(UNIQFS_FILE_ENTRY), 1, navigator);
+            fileAlreadyExists = true;
+            fileInfo.nfiles++;
+
+            //Updating nfiles of fileInfo
+            fseek(navigator,-sizeof(UNIQFS_FILE_INFO),SEEK_CUR);
+            fwrite(&fileInfo, sizeof(UNIQFS_FILE_INFO),1,navigator);
+
+            /************/
+            for ( int j = 0 ; j < fileInfo.nfiles - 1 ; j++ ) {
+              fseek(navigator, sizeof(UNIQFS_FILE_ENTRY),SEEK_CUR);
+            }
+            /************/
+
+
+            /**************/
+            //Creating backup for the next bytes
+            long int positionToWrite = ftell(navigator);
+            printf("1 - ftell():%ld\n",ftell(navigator));
+            printf("fileSize%ld\n",fileSize);
+            long int remainingBytes = fileSize - positionToWrite;
+            printf("remainingBytes :%ld\n",remainingBytes);
+            char *myChar = (char *)malloc(remainingBytes * sizeof(char));
+            for(long int i = 0 ; i < remainingBytes;i++) {
+              myChar[i] = fgetc(navigator);
+            }
+
+            printf("i :%ld\n",i);
+            printf("2 - ftell():%ld\n",ftell(navigator));
+            fseek(navigator,positionToWrite,SEEK_SET);
+            /**************/
+            printf("3 - ftell():%ld\n",ftell(navigator));
+
+            UNIQFS_FILE_ENTRY fileEntryInput;
+            time_t curtime;time(&curtime);
+            fileEntryInput.creation_time = curtime;
+            strcpy(fileEntryInput.filename,*argv);
+
+            fwrite(&fileEntryInput,sizeof(UNIQFS_FILE_ENTRY),1,navigator);
+
+            printf("%s-> creation time: %s\n",*argv,ctime(&curtime));
+
+            printf("4 - ftell():%ld\n",ftell(navigator));
+
+            for(i = 0; i< remainingBytes ; i++ ) {
+              fputc(myChar[i],navigator);
+            }
+
+
 
           } else {
 
@@ -111,6 +132,7 @@ int put(int argc, char *argv[])
     if(fileAlreadyExists) {
       printf("IF fileAlreadyExists \n");
       fclose(inputFile);
+      fclose(navigator);
       argv++;
       continue;
     }
@@ -136,17 +158,39 @@ int put(int argc, char *argv[])
     time_t curtime;time(&curtime);
     fileEntryInput.creation_time = curtime;
     time_t a = fileEntryInput.creation_time;
-    printf("-> creation time: %s\n",ctime(&a));
+    printf("%s-> creation time: %s\n",*argv,ctime(&a));
     strcpy(fileEntryInput.filename,*argv);
 
     fwrite(&fileEntryInput, sizeof(UNIQFS_FILE_ENTRY), 1, navigator);
 
 
-    fclose(navigator);
 
 
+    // int b = 0;
+    // char c = 0;
+    // char emptyblock[header.blocksize];
+    // while( (c = fgetc(inputFile)) != EOF ){
+    //   emptyblock[b++] = c;
+    //   if(b == header.blocksize) {
+    //     fwrite(&emptyblock, header.blocksize, 1, navigator);
+    //     b = 0;
+    //   }
+    // }
+    // fwrite(&emptyblock, header.blocksize, 1, navigator);
+    // for(int b=0 ; b<header.blocksize ; ++b)
+    // {
+    //     emptyblock[b]   = '\0';
+    // }
+    //
+    // for(int b=0 ; b<header.nblocks ; ++b)
+    // {
+    //     fwrite(&emptyblock, header.blocksize, 1, navigator);
+    // }
+    //
+    //
 
 
+    rewind(navigator);
     printf("bitmap[%d] = UNIQFS_INFO\n",header.currentblock);
     bitmap[header.currentblock++] = UNIQFS_INFO;
 
@@ -155,47 +199,13 @@ int put(int argc, char *argv[])
       printf("bitmap[%d] = UNIQFS_DATA\n",i);
     }
 
-    FILE *headerBitmap = open_volumename("r+");
-    //int priorBlock = header.currentblock;
     header.currentblock += filenBlocks;
-    fwrite(&header, sizeof(UNIQFS_VOLUME_HEADER), 1, headerBitmap);
-    fwrite(bitmap, header.nblocks * sizeof(UNIQFS_BIT), 1, headerBitmap);
-    fclose(headerBitmap);
-
-    // rewind(volume);
+    fwrite(&header, sizeof(UNIQFS_VOLUME_HEADER), 1, navigator);
+    fwrite(bitmap, header.nblocks * sizeof(UNIQFS_BIT), 1, navigator);
+    fclose(navigator);
     fclose(inputFile);
 
     argv++;
-
-    // int b = 0;
-    // char c = 0;
-    // char emptyblock[header.blocksize];
-    // while( (c = fgetc(inputFile)) != EOF ){
-    //   emptyblock[b++] = c;
-    //   if(b == header.blocksize) {
-    //     fwrite(&emptyblock, header.blocksize, 1, volume);
-    //     b = 0;
-    //   }
-    // }
-    // fwrite(&emptyblock, header.blocksize, 1, volume);
-
-
-
-    // for(int b=0 ; b<header.blocksize ; ++b)
-    // {
-    //     emptyblock[b]   = '\0';
-    // }
-    //
-    // for(int b=0 ; b<header.nblocks ; ++b)
-    // {
-    //     fwrite(&emptyblock, header.blocksize, 1, volume);
-    // }
-    //
-    //
-
-
-
-
 
 
   }

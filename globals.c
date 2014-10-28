@@ -120,7 +120,10 @@ void dump_volume(void)
               sprintMD5(md5str, info.md5);
               printf("\t\tinfo.md5=%s\n", md5str);
 
-              
+              if(info.nfiles > 1) {
+                printf("info.nfiles %d\n",info.nfiles );
+                // info.nfiles = 1;
+              }
               for(int f=0 ; f<info.nfiles ; ++f)
               {
                   UNIQFS_FILE_ENTRY entry;
