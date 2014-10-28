@@ -58,10 +58,12 @@ void setHeaderBitmap() {
 }
 
 unsigned long getFileSize(char *filename) {
-    printf("getFileSize: %s\n",filename);
+    printf("\ngetFileSize: %s\n",filename);
+
     FILE *fp = fopen(filename,"r");
     if(fp == NULL)
     {
+
         perror(progname);
         exit(EXIT_FAILURE);
     }
@@ -72,7 +74,12 @@ unsigned long getFileSize(char *filename) {
 }
 
 
+void SEEK_TO_BLOCK(int bitmapPos) {
 
+
+
+
+}
 void dump_volume(void)
 {
     FILE *fpv = open_volumename("r");            // open volume for read-access
@@ -81,10 +88,12 @@ void dump_volume(void)
 
     UNIQFS_BIT     thisbitmap[header.nblocks];
     fread(thisbitmap,  header.nblocks * sizeof(UNIQFS_BIT), 1, fpv);
-
+    printf("\n\nDUMP_VOLUME\n");
     printf("header.nblocks=%i\n",       header.nblocks);
     printf("header.blocksize=%i\n",     header.blocksize);
     printf("header.currentblock=%i\n",     header.currentblock);
+
+
 
     // for(int b0=0 ; b0<header.nblocks ; ++b0)
       for(int b0=0 ; b0<15 ; ++b0)
@@ -92,48 +101,50 @@ void dump_volume(void)
         printf("block-%04i  ", b0);
 
         switch (thisbitmap[b0]) {
-        case UNIQFS_UNUSED : {
-            printf("UNIQFS_UNUSED\n");
-            break;
-        }
-        case UNIQFS_INFO : {
-            printf("UNIQFS_INFO\n");
+          case UNIQFS_UNUSED : {
+              printf("UNIQFS_UNUSED\n");
+              break;
+          }
+          case UNIQFS_INFO : {
+              printf("UNIQFS_INFO\n");
 
-            UNIQFS_FILE_INFO    info;
-            //SEEK_TO_BLOCK(b0);
-            fread(&info, sizeof info, 1, fpv);
+              UNIQFS_FILE_INFO    info;
+              SEEK_TO_BLOCK(b0);
+              fread(&info, sizeof info, 1, fpv);
 
-            printf("\t\tinfo.nfiles=%i\n", info.nfiles);
-            printf("\t\tinfo.length=%i\n", info.length);
-            printf("\t\tinfo.firstblock=%i\n", info.firstblock);
+              printf("\t\tinfo.nfiles=%i\n", info.nfiles);
+              printf("\t\tinfo.length=%i\n", info.length);
+              printf("\t\tinfo.firstblock=%i\n", info.firstblock);
 
-            char        md5str[2*MD5_DIGEST_LENGTH+1];
-            sprintMD5(md5str, info.md5);
-            printf("\t\tinfo.md5=%s\n", md5str);
+              char        md5str[2*MD5_DIGEST_LENGTH+1];
+              sprintMD5(md5str, info.md5);
+              printf("\t\tinfo.md5=%s\n", md5str);
 
-            for(int f=0 ; f<info.nfiles ; ++f)
-            {
-                UNIQFS_FILE_ENTRY entry;
+              
+              for(int f=0 ; f<info.nfiles ; ++f)
+              {
+                  UNIQFS_FILE_ENTRY entry;
 
-                fread(&entry, sizeof entry, 1, fpv);
+                  fread(&entry, sizeof entry, 1, fpv);
 
-                time_t when = entry.creation_time;
-                printf("\t\t\t%-24s %s", entry.filename, ctime(&when));
-            }
-            break;
-        }
-        case UNIQFS_DATA : {
-            printf("UNIQFS_DATA\n");
-            break;
-        }
-        default : {
-            printf("UNRECOGNIZED!!\n");
-            break;
-        }
-        }                                               // end of switch
+                  time_t when = entry.creation_time;
+                  printf("\t\t\t%-24s %s", entry.filename, ctime(&when));
+              }
+              break;
+          }
+          case UNIQFS_DATA : {
+              printf("UNIQFS_DATA\n");
+              break;
+          }
+          default : {
+              printf("UNRECOGNIZED!!\n");
+              break;
+          }
+        }                                             // end of switch
     }                                   // end of foreach block
     fclose(fpv);
 }
+
 
 
 
